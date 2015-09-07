@@ -454,7 +454,7 @@ and thus they have no performance penalty
 
 ### Type Providers
 
-![Type Providers](images/TypeProviders.png)
+![Type Providers](images/TypeProvider.png)
 
 ***
 
