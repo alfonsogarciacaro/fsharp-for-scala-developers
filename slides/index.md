@@ -6,10 +6,14 @@
 
 ***
 
-### F# for Scala developers
+### F# for Scala Developers
 Walking into the dark side
 
-![fsharp](images/fsharp256.png)
+<div>
+  <img style="display: inline-block;vertical-align:middle" src="images/scala.png" />
+  <span style="white-space: pre">   meets   </span>
+  <img style="display: inline-block;vertical-align:middle" src="images/fsharp.png" />
+</div>
 
 > Scala and F# Madrid Meetup groups
 
@@ -19,7 +23,10 @@ Walking into the dark side
 
 - Bring (non-strict) Functional Programming to Java and .NET
 - Full compatibility with their host platforms
+- Built-in functional libraries
 - Static safety with type inference
+- Mostly expression based (side-effects also allowed)
+- Open source projects with vibrant communities
 
 ***
 
@@ -29,6 +36,7 @@ Walking into the dark side
 
 - Embraces both Object Oriented and Functional Programming
 - Syntax designed not to scare OOP developers: curly-brace
+- Very powerful and flexible syntax
 - Language team works separately from Java team
 
 ---
@@ -39,6 +47,7 @@ Walking into the dark side
 
 - Multi-paradigm but **functional-first**
 - Syntax inherited from Ocaml: indentation sensitive
+- Less flexible syntax, more focused on consistency and tool support
 - Two flavors: project-linked (.fsproj, .fs) and scripts (.fsx)
 - Language team worked together with .NET team
 
