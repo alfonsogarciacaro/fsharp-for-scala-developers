@@ -6,6 +6,12 @@
 
 ***
 
+<style>
+strong, thead {
+  color: burlywood
+}
+</style>
+
 ### F# for Scala Developers
 Walking into the dark side
 
@@ -15,18 +21,19 @@ Walking into the dark side
   <img style="display: inline-block;vertical-align:middle" src="images/fsharp.png" />
 </div>
 
-> Scala and F# Madrid Meetup groups
+> [Scala](http://www.meetup.com/Scala-Programming-Madrid/) and
+> [F#](http://www.meetup.com/madrid-fsharp/) Madrid Meetup groups
 
 ***
 
 ### How much do Scala and F# look like?
 
-- Bring (non-strict) Functional Programming to Java and .NET
-- Full compatibility with their host platforms
+- Bring (non-strict) **Functional Programming** to Java and .NET
+- Full **compatibility** with their host platforms
 - Built-in functional libraries
-- Static safety with type inference
-- Mostly expression based (side-effects also allowed)
-- Open source projects with vibrant communities
+- **Static safety** with type inference
+- Mostly **expression** based (side-effects also allowed)
+- **Open source** projects with vibrant communities
 
 ***
 
@@ -34,9 +41,10 @@ Walking into the dark side
 
 #### Scala
 
-- Embraces both Object Oriented and Functional Programming
-- Syntax designed not to scare OOP developers: curly-brace
-- Very powerful and flexible syntax
+- Embraces both **Object Oriented** and Functional Programming
+- Designed not to scare OOP developers: **curly-brace**
+- Very powerful and **flexible syntax**
+- Very rich **class system**
 - Language team works separately from Java team
 
 ---
@@ -46,13 +54,13 @@ Walking into the dark side
 #### F#
 
 - Multi-paradigm but **functional-first**
-- Syntax inherited from Ocaml: indentation sensitive
-- Less flexible syntax, more focused on consistency and tool support
-- Two flavors: project-linked (.fsproj, .fs) and scripts (.fsx)
-- Language team worked together with .NET team
+- Inherited from Ocaml: **indentation sensitive**
+- Less flexible syntax, more focused on **consistency**
+- Two flavors: project-linked and **scripts**
+- Language team works together (more or less) with .NET team
 
-> Thanks to this, things like generics and tail-call instructions
-> are native to the platform
+> Functional features like generics and tail-call
+> instructions are native to the platform
 
 ***
 
@@ -203,7 +211,7 @@ Optional and rest parameters are only accepted in non-curried class methods
 #### F#
 
 As in Scala, **break** and **continue** are missing from the language.
-Recursion or collection transformation functions are preferred.
+Recursion or stream functions are preferred.
 
     for index = 1 to 5 do
       printfn "%i times 5 is %i" index (index * 5)
@@ -235,23 +243,104 @@ Classes are very powerful in Scala and different from F#:
   features (like **primary constructors**)
 * Interfaces are just abstract classes without default method implementations
 * No mixins, only multiple interface implementation is possible
-* Extension methods are allowed
+  (extension methods are allowed)
+* **Object Expressions** allow dynamic implementation of interfaces
 
 ---
 
-### F#
+### Abstract classes and interfaces
 
-WIP: Class example
+    [<AbstractClass>]                         // If at least one member lacks
+    type AbstractBaseClass() =                // implementation, the class must
+      abstract member Add: int -> int -> int  //  be marked as abstract
+      abstract member Pi: float
+      default this.Add x y = x + y            // Default implementation
+
+    type MyInterface =                        // Interfaces are just abstract
+      abstract member Square: float -> float  // classes without implementations
+
+---
+
+    type DerivedClass(param1, param2) =
+       inherit AbstractBaseClass()                // Inheritance
+       let mutable area = 0                       // Private field
+       new(param1) = DerivedClass(param1, 5)      // Secondary constructor
+
+       override this.Add _ _ = param1 + param2
+       override this.Pi = 3.14                    // Getter-only property
+
+       member this.Area
+          with get() = area                       // Getter-Setter property
+          and set(v) = area <- v
+       member val Area2 = 0 with get, set         // Auto implemented property
+
+       static member StaticValue = 5              // Static members are allowed
+
+       interface MyInterface with                 // Interface implementation
+          member this.Square x = x * x            // (always explicit)
+
+---
+
+### Object expressions
+
+```
+let o1 = DerivedClass(4)          // new keyword is optional
+//o1.Square 5.                    // Cannot access interface methods implicitly
+let o2: MyInterface = upcast o1   // Casting is automatic when passing arguments
+printfn "%f" (o2.Square 5.)
+
+let o3 =                          // Object expressions create an anonymous object
+  { new MyInterface with          // implementing the interface
+    member __.Square x = x ** 2. }
+printfn "%f" (o3.Square 5.)
+
+```
 
 ***
 
-### F# Tuples and Records
+### Tuples and Records
 
 In F#, tuples, records (lightweight classes) and discriminated unions (ADT)
-are usually preferred. With the logic separated in module functions.
+are usually preferred, with logic separated in module functions.
 
-WIP: Examples
+---
 
+#### Tuples in Scala
+```
+[lang=scala]
+def reverse(x: Int, y: Double, z: String, u: List[Int]) = (u, z, y, x)
+val myTuple = (1, 2., "hola", List(1,2,3))
+val (_,_,_,_li) = myTuple              // Destructuring
+myTuple._4                             // Direct access to members
+//reverse(myTuple)                     // Error
+```
+
+#### Tuples in F#
+```
+let reverse(x, y, z, u) = (u, z, y, x)
+let myTuple = 1, 2., "hola", [1;2;3]   // Parens can be omitted
+let (_,_,_,li) = myTuple               // Destructuring
+//myTuple._4                           // No direct acccess to members but...
+reverse myTuple                        // can be destructured in function args
+```
+
+---
+
+#### F# Records
+
+Named tuples or lightweight classes, if you must
+
+```
+// Type definition
+type MyRecord = { id: int; qt: float; name: string; li: int list }
+
+// Construction
+let myRecord = { id = 1; qt = 2.; name = "hola"; li = [1;2;3] }
+
+myRecord.id                                 // Member access
+let { id = id2; name = name2 } = myRecord   // Destructuring
+let myRecord2 = { myRecord with qt = 5. }   // Copying
+```
 ***
 
 ### Algebraic Data Types and Pattern Matching
@@ -380,6 +469,9 @@ match "Hi Robert" with
 | _ -> failwith "Unknown"
 ```
 
+WIP: Parameterized Active Patterns
+Change to a more useful sample?
+
 ---
 
 #### F#
@@ -397,6 +489,8 @@ let evenOrOdd i =
   | Even -> printfn "%d is even" i
   | Odd  -> printfn "%d is odd" i
 ```
+
+Compiler checks all cases have been exausted
 
 ***
 
@@ -463,7 +557,34 @@ and thus they have no performance penalty
 
 ### Type Providers
 
-![Type Providers](images/TypeProvider.png)
+Static types generated dynamically
+
+![CSV Type Provider ](images/type-provider-csv.gif)
+
+---
+
+#### JSON
+
+![JSON Type Provider ](images/type-provider-json.gif)
+
+---
+
+#### World Bank API REST
+
+![Worl Bank Type Provider ](images/type-provider-wb.gif)
+
+More at [FSharp.Data](http://fsharp.github.io/FSharp.Data/)
+
+***
+
+### Flagship Projects
+
+WIP
+
+| Scala          |        | F#             |
+| :------------: | ------ | :------------: |
+| Akka           |        | Akka.net       |
+| Spark          |        | Mbrace         |
 
 ***
 

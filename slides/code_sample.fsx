@@ -8,6 +8,40 @@
 //sf.Wind.Speed
 //sf.Main.
 
+open System.Text.RegularExpressions
+
+let (|Integer|_|) s =
+  let success, i = System.Int32.TryParse s
+  if success then Some i else None
+
+// ParseRegex parses a regular expression and returns a list of the strings that match each group in
+// the regular expression.
+// List.tail is called to eliminate the first element in the list, which is the full matched expression,
+// since only the matches for each group are wanted.
+let (|ParseRegex|_|) regex str =
+   let m = Regex(regex).Match(str)
+   if m.Success
+   then Some (List.tail [ for x in m.Groups -> x.Value ])
+   else None
+
+// Three different date formats are demonstrated here. The first matches two-
+// digit dates and the second matches full dates. This code assumes that if a two-digit
+// date is provided, it is an abbreviation, not a year in the first century.
+let parseDate str =
+   match str with
+     | ParseRegex "(\d{1,2})/(\d{1,2})/(\d{1,2})$" [Integer m; Integer d; Integer y]
+          -> new System.DateTime(y + 2000, m, d)
+     | ParseRegex "(\d{1,2})/(\d{1,2})/(\d{3,4})" [Integer m; Integer d; Integer y]
+          -> new System.DateTime(y, m, d)
+     | ParseRegex "(\d{1,4})-(\d{1,2})-(\d{1,2})" [Integer y; Integer m; Integer d]
+          -> new System.DateTime(y, m, d)
+     | _ -> new System.DateTime()
+
+let dt1 = parseDate "12/22/08"
+let dt2 = parseDate "1/1/2009"
+let dt3 = parseDate "2008-1-15"
+let dt4 = parseDate "1995-12-28"
+
 module Mod1 =
   type T() =
     member __.Foo() = "foo"
@@ -122,3 +156,49 @@ match "Hi Robert" with
 | Split(_, "ROBERT") -> printfn "Welcome back, Robert!"
 | "magicword" -> printfn "Bingo!"
 | _ -> failwith "Unknown"
+
+[<AbstractClass>]                             // If at least one member lacks implementation,
+type AbstractBaseClass() =                    // class must be marked as abstract
+  abstract member Add: int -> int -> int
+  abstract member Pi: float
+  default this.Add x y = x + y                // Default implementation
+
+type MyInterface =                            // Interfaces are just abstract
+  abstract member Square: float -> float      // classes without implementations
+
+type DerivedClass(param1, param2) =
+   inherit AbstractBaseClass()                // Inheritance
+   let mutable area = 0                       // Private field
+   new(param1) = DerivedClass(param1, 5)      // Secondary constructor
+   override this.Add _ _ = param1 + param2
+   override this.Pi = 3.14                    // Getter-only property
+   member this.Area
+      with get() = area                       // Getter-Setter property
+      and set(v) = area <- v
+   member val Area2 = 0 with get, set         // Auto implemented property
+   static member StaticValue = 5              // Static members are allowed
+   interface MyInterface with                 // Interface implementation
+      member this.Square x = x * x
+
+let o1 = DerivedClass(4)            // new keyword is optional
+//o1.Square 5.                      // Error: cannot access interface methods implicitly
+let o2: MyInterface = upcast o1     // Casting is automatic when passing arguments
+printfn "%f" (o2.Square 5.)
+
+let o3 =                            // Object expressions create an anonymous object
+  { new MyInterface with            // implementing the interface
+    member __.Square x = x ** 2. }
+printfn "%f" (o3.Square 5.)
+
+let reverse(x, y, z, u) = (u, z, y, x)
+let myTuple = 1, 2., "hola", [1;2;3]   // Parens can be omitted
+let (_,_,_,li) = myTuple               // Destructuring
+//myTuple._4                           // No direct acccess to values...
+reverse myTuple                        // but can be destructured in function args
+
+// Record definition
+type MyRecord = { id: int; qt: float; name: string; li: int list }
+
+let myRecord = { id = 1; qt = 2.; name = "hola"; li = [1;2;3] } // Construction
+let { id = id2; name = name2 } = myRecord                       // Destructuring
+let myRecord2 = { myRecord with qt = 5. }                       // Copying
