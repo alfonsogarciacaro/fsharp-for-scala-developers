@@ -404,93 +404,83 @@ let rec matchShapeList = function             // Shortcut
 
 ***
 
-### Extractor Objects
-
-#### Scala
+#### Scala Extractor Objects
 
 ```
 [lang=scala]
-object Greeting {
-  def unapply(str: String): Option[String] = {
-    val parts = str.split(' ')
-    if (List("Hi", "Hello", "Bye").contains(parts(0)))
-        Some(parts(1))
-    else None
-  }
+object Even {
+  def unapply(x: Int) =
+    if (x % 2 == 0) Some(x) else None
 }
 
-object Split {
-  def unapply(str: String): Option[(String,String)] = {
-    val parts = str.split(' ')
-    if (parts.length == 2)
-        Some(parts(0).toUpperCase(), parts(1).toUpperCase())
-    else None
-  }
+object Odd {
+  def unapply(x: Int) =
+    if (x % 2 == 0) None else Some(x)
 }
+
+println(5 match {
+  case Even(_) => "Hello"
+  case Odd(_) => "Goodbye"
+})
 ```
 ---
 
-#### Scala
-
-Combining patterns
-
+#### F# Exhaustive Active Patterns
 ```
-[lang=scala]
-"Hi Robert" match {
-  case Greeting(name) => println(s"Greet $name")
-  case Split(_,"ROBERT") => println("Welcome back, Robert!")
-  case "magicword" => println("Bingo!")     // Literal value
-  case _ => throw new Exception("Unknown")
-}
-```
----
-
-### Active Patterns
-
-#### F#
-
-```
-let (|Greeting|_|) (str: string) =
-  let parts = str.Split(' ')
-  if ["Hi"; "Hello"; "Bye"] |> List.contains parts.[0]
-  then Some(Greeting parts.[1])
-  else None
-
-let (|Split|_|) (str: string) =
-  let parts = str.Split(' ')
-  if parts.Length = 2
-  then Some(parts.[0].ToUpper(), parts.[1].ToUpper())
-  else None
-
-match "Hi Robert" with
-| Greeting name -> printfn "Greet %s" name
-| Split(_, "ROBERT") -> printfn "Welcome back, Robert!"
-| "magicword" -> printfn "Bingo!"
-| _ -> failwith "Unknown"
+let (|Even|Odd|) i =
+  if i % 2 = 0 then Even else Odd
+  
+match 5 with Even -> "Hello" | Odd -> "Goodbye"
+|> printfn "%s"
 ```
 
-WIP: Parameterized Active Patterns
-Change to a more useful sample?
+#### F# Partial Active Pattern
+```
+let (|Integer|_|) (str: string) =
+  match System.Int32.TryParse str with
+  | (true, i) -> Some i | (false, _) -> None
+
+let (|Float|_|) (str: string) =
+  match System.Double.TryParse str with
+  | (true, f) -> Some f | (false, _) -> None
+
+match "Hola" with
+| Integer i -> printfn "%d : Integer" i
+| Float f -> printfn "%f : Floating point" f
+// Appease the compiler
+| _ as str -> printfn "%s : Not matched" str
+```
 
 ---
 
-#### F#
+#### F# Parameterized Active Patterns
 
-Exhaustive pattern
+Specializing the pattern by passing extra parameters
 
 ```
-let (|Even|Odd|) input =
-  if input % 2 = 0
-  then Even
-  else Odd
+open System.Text.RegularExpressions
 
-let evenOrOdd i =
-  match i with
-  | Even -> printfn "%d is even" i
-  | Odd  -> printfn "%d is odd" i
+let (|ParseRegex|_|) regex str =
+   math Regex.Match(str, regex) with
+   | m when not m.Success -> None
+   | m -> [for x in m.Groups -> x.Value] |> List.tail |> Some
+
+let parseDate str =
+   match str with
+     | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{1,2})$"
+                  [Integer m; Integer d; Integer y]
+       -> System.DateTime(y + 2000, m, d)
+       
+     | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{3,4})$"
+                  [Integer m; Integer d; Integer y]
+       -> System.DateTime(y, m, d)
+       
+     | ParseRegex @"^(\d{1,4})-(\d{1,2})-(\d{1,2})$"
+                  [Integer y; Integer m; Integer d]
+       -> System.DateTime(y, m, d)
+       
+     | _ -> System.DateTime()
 ```
-
-Compiler checks all cases have been exausted
 
 ***
 
@@ -502,13 +492,43 @@ Compiler checks all cases have been exausted
 
 ### Generics
 
-WIP
+F# generics are very similar to Scala. The main characteristics are:
 
-F# generics are very similar to Scala, with some differences:
+* **Automatic Generalization**<br />
+  If the function has no dependency on the specific type of a parameter, the type is inferred to be generic
 
-* Automatic Generalization
-* Constraints
-* Statically Resolved Type Parameters
+* **Constraints**<br />
+  Similar to Scala Type Bounds
+
+* **Statically Resolved Type Parameters**<br />
+  Type parameter replaced with actual types at compile time instead of at run time
+
+---
+
+```
+// Automatic Generalization
+let (|>) x f = f x
+// val ( |> ) : x:'a -> f:('a -> 'b) -> 'b
+
+// Constraints
+let max x y = if x > y then x else y
+// val max : x:'a -> y:'a -> 'a when 'a : comparison
+
+// Syntax for statically resolved type parameters is not beautiful
+// and it's mainly intented for core library functions. However it
+// can be used with inline functions for neat tricks like duck typing
+let inline makeNoise (animal: ^a when ^a : (member MakeNoise: unit->unit)) =
+  (^a: (member MakeNoise: unit->unit) animal)
+  
+type Dog() =
+  member __.MakeNoise() = printfn "Guau!"
+
+type Cat() =
+  member __.MakeNoise() = printfn "Miau!"
+  
+makeNoise(Dog())
+makeNoise(Cat())
+```
 
 ***
 
@@ -573,7 +593,7 @@ Static types generated dynamically
 
 ![Worl Bank Type Provider ](images/type-provider-wb.gif)
 
-More at [FSharp.Data](http://fsharp.github.io/FSharp.Data/)
+Watch [this presentation](http://sergey-tihon.github.io/Talks/typeproviders#/) to know more about type providers
 
 ***
 
