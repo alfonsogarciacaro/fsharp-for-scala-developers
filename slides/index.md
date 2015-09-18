@@ -56,7 +56,7 @@ Walking into the dark side
 - Multi-paradigm but **functional-first**
 - Inherited from Ocaml: **indentation sensitive**
 - Less flexible syntax, more focused on **consistency**
-- Two flavors: project-linked and **scripts**
+- Three flavors: **project** (.fs), **script** (.fsx) and **signature** (.fsi) files
 - Language team works together (more or less) with .NET team
 
 > Functional features like generics and tail-call
@@ -130,6 +130,12 @@ Walking into the dark side
     def recursiveFuncion(x: Int): Int =
       if (x == 1) 1 else x * (recursiveFuncion(x - 1))
 
+    // Function as object instead of method
+    val myLambda = (x: Int, y: Int) => x * y
+    
+    // Lambda shortcut, not possible in F#
+    val myLambda2: Function2[Int,Int,Int] = _*_
+
 ---
 
 #### Scala
@@ -175,6 +181,8 @@ Memoize Pattern
 ---
 
 #### F#
+
+As seen above, functions in F# are usually contained in modules (curried by default)
 
 Optional and rest parameters are only accepted in non-curried class methods
 
@@ -336,10 +344,10 @@ reverse myTuple                        // can be destructured in function args
 Named tuples or lightweight classes, if you must
 
 ```
-// Type definition
+// Beware! In F# commas are only for tuples. Separating statements, members,
+// list items, etc. is done with either semicolons or line breaks
 type MyRecord = { id: int; qt: float; name: string; li: int list }
 
-// Construction
 let myRecord = { id = 1; qt = 2.; name = "hola"; li = [1;2;3] }
 
 myRecord.id                                 // Member access
@@ -472,27 +480,22 @@ Specializing the pattern by passing extra parameters
 
 ```
 open System.Text.RegularExpressions
-
 let (|ParseRegex|_|) regex str =
-   math Regex.Match(str, regex) with
+   match Regex.Match(str, regex) with
    | m when not m.Success -> None
    | m -> [for x in m.Groups -> x.Value] |> List.tail |> Some
 
-let parseDate str =
-   match str with
-     | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{1,2})$"
-                  [Integer m; Integer d; Integer y]
-       -> System.DateTime(y + 2000, m, d)
-       
-     | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{3,4})$"
-                  [Integer m; Integer d; Integer y]
-       -> System.DateTime(y, m, d)
-       
-     | ParseRegex @"^(\d{1,4})-(\d{1,2})-(\d{1,2})$"
-                  [Integer y; Integer m; Integer d]
-       -> System.DateTime(y, m, d)
-       
-     | _ -> System.DateTime()
+let parseDate = function
+  | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{1,2})$"
+              [Integer m; Integer d; Integer y]
+    -> System.DateTime(y + 2000, m, d)
+  | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{3,4})$"
+              [Integer m; Integer d; Integer y]
+    -> System.DateTime(y, m, d)
+  | ParseRegex @"^(\d{1,4})-(\d{1,2})-(\d{1,2})$"
+              [Integer y; Integer m; Integer d]
+    -> System.DateTime(y, m, d)
+  | _ -> System.DateTime()
 ```
 
 ***
@@ -577,7 +580,21 @@ F# built-in functions and operators and focus only on a few collection types:
 #### Scala
 
     [lang=scala]
-
+    class Person(val name: String, val age: Int) {}
+    def selectDataRows() = {
+      val rnd = scala.util.Random
+      for (i <- Stream.from(1))
+        yield Map("name" -> s"Person$i",
+                  "age" -> rnd.nextInt(99))
+    }
+  
+    selectDataRows()
+      .map(row => new Person(row("name").asInstanceOf[String],
+                            row("age").asInstanceOf[Int]))
+      .filter(_.name.startsWith("P"))
+      .take(20)
+      .sortBy(_.age)
+      .toList
 
     // There're multiple libraries in Scala for collections
     // Akka-Streams, Scalaz-Stream...
@@ -598,33 +615,37 @@ F# built-in functions and operators and focus only on a few collection types:
     
     getDataRows()
     |> Seq.map (fun row -> { name = unbox row.["name"]
-                            age = unbox row.["age"] })
-    |> Seq.where (fun p -> p.name.StartsWith("A"))
-    |> Seq.sortBy (fun p -> p.age)
+                             age = unbox row.["age"] })
+    |> Seq.filter (fun p -> p.name.StartsWith("P"))
     |> Seq.take 20
+    |> Seq.sortBy (fun p -> p.age)
+    |> Seq.toList
     
     // List and Array modules contain the same functions as Seq
-
     // Of course, pipe operator is possible in SCala too
     
 ---
 
-### Comprehensions
+### F# Comprehensions
 
-#### Scala
+F# allows comprensions similar to those in Haskell or Python
 
+    let myList  =     [  for i in 1..100 do yield i*i ]
+    let myArray =     [| for i in 1..100 -> i*i |]
+    let mySeq   = seq {  for i in 1..100 -> i*i }
+    
+    // `->` is a shortcut for `do yield`
 
-#### F#
+In Scala we would just use functions 
 
-    let myList = [ for i in 1..100 do yield i*i ]
-    let myArray = [| for i in 1..100 -> i*i |]     // -> is shortcut for do yield
-    let mySeq = seq { for i in 1..100 -> i*i}
+    [lang=scala]
+    List.range(1,101).map(i => i*i)
 
 ---
 
 ### Observables
 
-F# core library also includes some support for Functional Reactive Programming
+F# core library also includes support for Functional Reactive Programming
 
 ```
 let makeStream interval =
@@ -644,9 +665,7 @@ let fizzStream, buzzStream =
     nonSimultaneousStream
     |> Observable.map (fun (ev1,_) -> ev1)
     |> Observable.partition (fun (id,_) -> id=3000)
-```    
-
-As with Scala, more FRP libraries like [Reactive Extensions](http://fsprojects.github.io/FSharp.Control.Reactive/) are available 
+```
 
 ---
 
@@ -661,7 +680,114 @@ Check also [Phillip Trelford's presentation](http://www.slideshare.net/ptrelford
 
 ### Scala Comprehensions and F# Computation Expressions
 
-WIP
+In Scala, any type implementing _filterWith_, _map_ and _flatMap_ can be
+used with **for comprehensions**. This allows, for example, dealing with async
+operations in a monadic way.
+
+    [lang=scala]
+    val usdQuote = Future { connection.getCurrentValue(USD) }
+    val chfQuote = Future { connection.getCurrentValue(CHF) }
+
+    val purchase = for {
+      usd <- usdQuote
+      chf <- chfQuote
+      if isProfitable(usd, chf)
+    } yield connection.buy(amount, chf)
+
+    purchase onSuccess {
+      case _ => println("Purchased " + amount + " CHF")
+    }
+
+---
+
+In F#, this can be done using **computation expressions**
+
+    // Parallel I/O
+    let fetchUrlAsync url = async {
+      let req = System.Net.WebRequest.Create(System.Uri url)
+      use! resp = req.AsyncGetResponse()
+      use stream = resp.GetResponseStream()
+      use reader = new System.IO.StreamReader(stream)
+      return reader.ReadToEnd()
+    }
+        
+    [ "http://fsharp.org/"; "http://www.scala-lang.org/" ]
+    |> List.map fetchUrlAsync
+    |> Async.Parallel
+    |> Async.RunSynchronously
+    |> printfn "%A"
+
+Computation expressions convert language constructs like
+*let*, *use*, *do*, *for* or *try* in [syntactic sugar](http://fsharpforfunandprofit.com/posts/computation-expressions-intro/)
+for continuation passing style operations
+
+---
+
+F# core has **Asynchronous Workflows** built-in
+
+    // Parallel CPU
+    let rec fib x =
+      if x <= 2
+      then 1
+      else fib(x-1) + fib(x-2)
+    
+    let fibs =
+      [ for i in 0..40 -> async { return fib(i) } ]
+      |> Async.Parallel
+      |> Async.RunSynchronously
+      |> printfn "%A"
+
+*Async<'T>* is lazy, it will only start running after
+calling *Async.Start* or *Async.RunSynchronously*
+
+---
+
+### Custom computation expressions
+
+    type MaybeBuilder() =
+      member __.Bind(x,f) = Option.bind f x
+      member __.Return v = Some v
+      member __.ReturnFrom o = o
+    let maybe = MaybeBuilder()
+        
+    let riskyOp x y =
+      if x + y < 100 then Some(x+y) else None
+    
+    let execMaybe x = maybe {
+      let! a = riskyOp x (x+1)
+      let! b = riskyOp a (a+1)
+      let! c = riskyOp b (b+1)
+      let! d = riskyOp c (c+1)
+      return d
+    }    
+    execMaybe 5
+
+Besides _Bind_ and _Return_, there are [other methods](http://fsharpforfunandprofit.com/posts/computation-expressions-builder-part1/)
+wich can be implemented by custom computations expressions
+like _Zero_, _Yield_, _Combine_, _For_, _While_ or _Try_
+
+---
+
+### Query expressions
+
+Query expressions provide support for LINQ in F#
+
+```
+query {
+    for n in db.Student do 
+    join e in db.CourseSelection on
+          (n.StudentID = e.StudentID)
+    count        
+}
+```
+
+
+They express transformations on a data source wich can
+be translated to another language, usually SQL
+
+    [lang=sql]SELECT COUNT(*) FROM 
+    Student JOIN CourseSelection 
+    ON Student.StudentID = CourseSelection.StudentID
 
 ***
 
@@ -669,26 +795,26 @@ WIP
 
 ***
 
-### Measure Units
+### Units of Measure
 
-    [<Measure>] type km
-    [<Measure>] type mi
-    [<Measure>] type h
+    [<Measure>] type km           // Define the measure units
+    [<Measure>] type mi           // as simple types decorated
+    [<Measure>] type h            // with Measure attribute
 
-    type Vector3D<[<Measure>] 'u> = {
-      x: float<'u>
-      y: float<'u>
-      z: float<'u>
-    }
+    let speed = 90<km> / 1<h>     // Can be combined through
+    let speed' = 55<mi> / 1<h>    // arithmetic operations
 
-    let v1 = 3.1<km/h>
-    let v2 = 2.7<km/h>
-    let v3 = 1.6<mi/h>
-    v1 + v2
-    //v1 + v3           // Doesn't compile
+    let v1, v2, v3 = 3.1<km/h>, 2.7<km/h>, 1.5<mi/h>
+    let sum = v1 + v2
+    //let sum' = v1 + v3          // Error: doesn't compile
 
-Measure annotations disappear after compilation
-and thus they have no performance penalty
+    // Can be used in a generic way
+    type Vector3D<[<Measure>] 'u> =
+      { x: float<'u>; y: float<'u>; z: float<'u> }
+
+Measure annotations disappear after compilation and thus they have no performance penalty
+
+(Cannot be retrieved by Reflection though)
 
 ***
 
@@ -712,11 +838,11 @@ Static types generated dynamically
 
 Watch [this presentation](http://sergey-tihon.github.io/Talks/typeproviders#/) to know more about type providers
 
+Type providers can also be emulated with [Scala macros](http://docs.scala-lang.org/overviews/macros/typeproviders.html)
+
 ***
 
 ### Flagship Projects
-
-WIP
 
 | Scala          |        | F#              |
 | :------------: | ------ | :-------------: |
@@ -724,15 +850,16 @@ WIP
 | Spark          |        | Mbrace / Prajna |
 | Play           |        | ASP.NET / Suave |
 
+TODO: Add FSLabs
 
 ***
 
 ### Other platforms
 
-WIP
+TODO: Add brief explanation
 
-- JavaScript
 - Mobile platforms
+- JavaScript
 
 ***
 
@@ -740,3 +867,5 @@ WIP
 
 * [F# foundation](http://fsharp.org/)
 * [F# for Fun and Profit](http://fsharpforfunandprofit.com/)
+
+TODO: Add more links? 
