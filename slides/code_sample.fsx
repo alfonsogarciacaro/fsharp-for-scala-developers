@@ -202,3 +202,27 @@ type MyRecord = { id: int; qt: float; name: string; li: int list }
 let myRecord = { id = 1; qt = 2.; name = "hola"; li = [1;2;3] } // Construction
 let { id = id2; name = name2 } = myRecord                       // Destructuring
 let myRecord2 = { myRecord with qt = 5. }                       // Copying
+
+// F#
+let makeStream interval =
+    let t1 = System.DateTime.Now
+    let timer = new System.Timers.Timer(float interval, AutoReset=true)
+    timer.Start()
+    timer.Elapsed
+    |> Observable.map (fun t2 -> interval, t2.SignalTime - t1)
+
+let simultaneousStream, nonSimultaneousStream =
+    Observable.merge (makeStream 3000) (makeStream 5000)
+    |> Observable.pairwise
+    |> Observable.partition (fun ((_,t1), (_,t2)) ->
+        (t2 - t1).TotalMilliseconds < 50.)
+
+let fizzStream, buzzStream =
+    nonSimultaneousStream
+    |> Observable.map (fun (ev1,_) -> ev1)
+    |> Observable.partition (fun (id,_) -> id=3000)
+
+//let print s (_, t: System.TimeSpan) = printfn "%.0f: %s" t.TotalMilliseconds s
+//simultaneousStream |> Observable.subscribe (fst >> print "FizzBuzz") 
+//fizzStream |> Observable.subscribe (print "Fizz")
+//buzzStream |> Observable.subscribe (print "Buzz")

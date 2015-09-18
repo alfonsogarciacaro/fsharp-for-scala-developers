@@ -248,7 +248,7 @@ Classes are very powerful in Scala and different from F#:
 
 ---
 
-### Abstract classes and interfaces
+### Abstract classes, interfaces and structs (value classes)
 
     [<AbstractClass>]                         // If at least one member lacks
     type AbstractBaseClass() =                // implementation, the class must
@@ -258,6 +258,11 @@ Classes are very powerful in Scala and different from F#:
 
     type MyInterface =                        // Interfaces are just abstract
       abstract member Square: float -> float  // classes without implementations
+
+    [<Struct>]                                // Memory for structs is allocated
+    type MyStruct(x: float, y: float) =       // on the stack, not the heap
+      member __.X = x                         // Instances are passed by value,
+      member __.Y = y                         // not by reference
 
 ---
 
@@ -341,6 +346,14 @@ myRecord.id                                 // Member access
 let { id = id2; name = name2 } = myRecord   // Destructuring
 let myRecord2 = { myRecord with qt = 5. }   // Copying
 ```
+
+We can reach a similar effect in Scala marking constructor parameters as fields
+
+    [lang=scala]
+    class MyRecord(val id: Int, val qt: Double,
+                   val name: String, val li: List[Int]) {}
+    
+
 ***
 
 ### Algebraic Data Types and Pattern Matching
@@ -492,16 +505,16 @@ let parseDate str =
 
 ### Generics
 
-F# generics are very similar to Scala. The main characteristics are:
+F# generics are very similar to Scala, with a few diferences:
 
 * **Automatic Generalization**<br />
   If the function has no dependency on the specific type of a parameter, the type is inferred to be generic
 
-* **Constraints**<br />
-  Similar to Scala Type Bounds
-
 * **Statically Resolved Type Parameters**<br />
   Type parameter replaced with actual types at compile time instead of at run time
+  
+* **No generics of generics**<br />
+  Generics are native to .NET platform (no erasures) but on the other hand are more limited (no type classes)
 
 ---
 
@@ -520,25 +533,129 @@ let max x y = if x > y then x else y
 let inline makeNoise (animal: ^a when ^a : (member MakeNoise: unit->unit)) =
   (^a: (member MakeNoise: unit->unit) animal)
   
-type Dog() =
-  member __.MakeNoise() = printfn "Guau!"
-
-type Cat() =
-  member __.MakeNoise() = printfn "Miau!"
+type Dog() = member __.MakeNoise() = printfn "Guau!"
+type Cat() = member __.MakeNoise() = printfn "Miau!"
   
 makeNoise(Dog())
 makeNoise(Cat())
+```
+---
+
+### No generics of generics
+Type classes like Functor are not allowed
+
+```
+Functor.map : ('a->'b) -> 'T<'a> -> 'T<'b>
+```
+<br />
+Instead, `map` must be implemented for each type (or interface)
+
+```
+List.map  : ('a->'b) -> list<'a> -> list<'b>
+Array.map : ('a->'b) -> array<'a> -> array<'b>
+Seq.map   : ('a->'b) -> seq<'a> -> seq<'b>
 ```
 
 ***
 
 ### Collections
 
-WIP
+F# built-in functions and operators and focus only on a few collection types:
 
-- Array (ResizeArray), List, Lazy Sequence
-- Transformation functions
-- Comprehensions
+|                | Immutable?  | Feature         | Scala           |
+| :------------: | :---------: | :-------------: | :-------------: |
+| list           | Yes         | Linked list     | List            |
+| seq            | Yes         | Lazy evaluation | Iterable/Stream |
+| array          | No          | Random access   | Array           |
+| map            | Yes         | Indexed access  | Map             |
+| set            | Yes         | Unique items    | Set             |
+
+---
+
+### Fluent APIs
+
+#### Scala
+
+    [lang=scala]
+
+
+    // There're multiple libraries in Scala for collections
+    // Akka-Streams, Scalaz-Stream...
+
+---
+
+#### F#
+
+    type Person = { name: string; age: int }
+    let getDataRows() =
+      let rnd = System.Random()
+      Seq.initInfinite (fun i ->
+        Map [ ("name", sprintf "Person%i" i |> box)
+              ("age", rnd.Next 99  |> box) ])
+
+    // It's more idiomatic in F# to use module functions
+    // and the pipe operator rather than methods
+    
+    getDataRows()
+    |> Seq.map (fun row -> { name = unbox row.["name"]
+                            age = unbox row.["age"] })
+    |> Seq.where (fun p -> p.name.StartsWith("A"))
+    |> Seq.sortBy (fun p -> p.age)
+    |> Seq.take 20
+    
+    // List and Array modules contain the same functions as Seq
+
+    // Of course, pipe operator is possible in SCala too
+    
+---
+
+### Comprehensions
+
+#### Scala
+
+
+#### F#
+
+    let myList = [ for i in 1..100 do yield i*i ]
+    let myArray = [| for i in 1..100 -> i*i |]     // -> is shortcut for do yield
+    let mySeq = seq { for i in 1..100 -> i*i}
+
+---
+
+### Observables
+
+F# core library also includes some support for Functional Reactive Programming
+
+```
+let makeStream interval =
+    let t1 = System.DateTime.Now
+    let timer = new System.Timers.Timer(float interval, AutoReset=true)
+    timer.Start()
+    timer.Elapsed
+    |> Observable.map (fun t2 -> interval, t2.SignalTime - t1)
+
+let simultaneousStream, nonSimultaneousStream =
+    Observable.merge (makeStream 3000) (makeStream 5000)
+    |> Observable.pairwise
+    |> Observable.partition (fun ((_,t1), (_,t2)) ->
+        (t2 - t1).TotalMilliseconds < 50.)
+
+let fizzStream, buzzStream =
+    nonSimultaneousStream
+    |> Observable.map (fun (ev1,_) -> ev1)
+    |> Observable.partition (fun (id,_) -> id=3000)
+```    
+
+As with Scala, more FRP libraries like [Reactive Extensions](http://fsprojects.github.io/FSharp.Control.Reactive/) are available 
+
+---
+
+More info about F# collections at [Scott Wlaschin's site](http://fsharpforfunandprofit.com/posts/list-module-functions/)
+
+Check also [Phillip Trelford's presentation](http://www.slideshare.net/ptrelford/beyond-lists-functional-kats-conf-dublin-2015) about the performance of F# collection types
+
+![List Module Functions](images/cyoa_list_module.jpg)
+
 
 ***
 
@@ -579,19 +696,19 @@ and thus they have no performance penalty
 
 Static types generated dynamically
 
-![CSV Type Provider ](images/type-provider-csv.gif)
+![CSV Type Provider](images/type-provider-csv.gif)
 
 ---
 
 #### JSON
 
-![JSON Type Provider ](images/type-provider-json.gif)
+![JSON Type Provider](images/type-provider-json.gif)
 
 ---
 
 #### World Bank API REST
 
-![Worl Bank Type Provider ](images/type-provider-wb.gif)
+![Worl Bank Type Provider](images/type-provider-wb.gif)
 
 Watch [this presentation](http://sergey-tihon.github.io/Talks/typeproviders#/) to know more about type providers
 
@@ -601,10 +718,12 @@ Watch [this presentation](http://sergey-tihon.github.io/Talks/typeproviders#/) t
 
 WIP
 
-| Scala          |        | F#             |
-| :------------: | ------ | :------------: |
-| Akka           |        | Akka.net       |
-| Spark          |        | Mbrace         |
+| Scala          |        | F#              |
+| :------------: | ------ | :-------------: |
+| Akka           |        | Akka.net        |
+| Spark          |        | Mbrace / Prajna |
+| Play           |        | ASP.NET / Suave |
+
 
 ***
 
