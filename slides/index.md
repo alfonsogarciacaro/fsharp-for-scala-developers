@@ -894,7 +894,7 @@ Type providers can also be emulated with [Scala macros](http://docs.scala-lang.o
 * [F# Weekly](https://sergeytihon.wordpress.com/category/f-weekly/)
 * [F# on Twitter](https://twitter.com/search?q=%23fsharp)
 
-> This slides were made with <a href=""> [FSReveal](http://fsprojects.github.io/FsReveal/) and no kittens were harmed in the process
+> These slides were made with <a href=""> [FSReveal](http://fsprojects.github.io/FsReveal/) and no kittens were harmed in the process
 
 ***
 
