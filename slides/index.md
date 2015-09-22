@@ -6,12 +6,6 @@
 
 ***
 
-<style>
-strong, thead {
-  color: burlywood
-}
-</style>
-
 ### F# for Scala Developers
 Walking into the dark side
 
@@ -86,6 +80,8 @@ Walking into the dark side
 
     val p: Point = null       // null allowed for custom classes
 
+' 10 min
+
 ---
 
 #### F#
@@ -113,6 +109,38 @@ Walking into the dark side
 
 ***
 
+### Imperative loops
+
+#### Scala
+
+    [lang=scala]
+    for (index <- 1 to 5) {
+      println(s"$index times 5 is ${index * 5}")
+    }
+
+    var index = 1
+    while (index < 6) {
+      println(s"$index times 5 is ${index * 5}")
+      index = index + 1
+    }
+
+---
+
+#### F#
+
+As in Scala, **break** and **continue** are missing from the language.
+Recursion or stream functions are preferred.
+
+    for index = 1 to 5 do
+      printfn "%i times 5 is %i" index (index * 5)
+
+    let mutable index = 1
+    while index < 6 do
+      printfn "%i times 5 is %i" index (index * 5)
+      index <- index + 1
+
+***
+
 ### Functions
 
 #### Scala
@@ -132,9 +160,11 @@ Walking into the dark side
 
     // Function as object instead of method
     val myLambda = (x: Int, y: Int) => x * y
-    
+
     // Lambda shortcut, not possible in F#
     val myLambda2: Function2[Int,Int,Int] = _*_
+
+' 15 min
 
 ---
 
@@ -199,38 +229,6 @@ Optional and rest parameters are only accepted in non-curried class methods
 
 ***
 
-### Imperative loops
-
-#### Scala
-
-    [lang=scala]
-    for (index <- 1 to 5) {
-      println(s"$index times 5 is ${index * 5}")
-    }
-
-    var index = 1
-    while (index < 6) {
-      println(s"$index times 5 is ${index * 5}")
-      index = index + 1
-    }
-
----
-
-#### F#
-
-As in Scala, **break** and **continue** are missing from the language.
-Recursion or stream functions are preferred.
-
-    for index = 1 to 5 do
-      printfn "%i times 5 is %i" index (index * 5)
-
-    let mutable index = 1
-    while index < 6 do
-      printfn "%i times 5 is %i" index (index * 5)
-      index <- index + 1
-
-***
-
 ### Classes
 
 #### Scala
@@ -240,6 +238,8 @@ Classes are very powerful in Scala and different from F#:
 * Singleton objects
 * Traits and abstract types
 * Compound types and mixins
+
+' 20 min
 
 ---
 
@@ -258,20 +258,21 @@ Classes are very powerful in Scala and different from F#:
 
 ### Abstract classes, interfaces and structs (value classes)
 
-    [<AbstractClass>]                         // If at least one member lacks
-    type AbstractBaseClass() =                // implementation, the class must
-      abstract member Add: int -> int -> int  //  be marked as abstract
-      abstract member Pi: float
-      default this.Add x y = x + y            // Default implementation
+```
+[<AbstractClass>]                         // If at least one member lacks
+type AbstractBaseClass() =                // implementation, the class must
+  abstract member Add: int -> int -> int  //  be marked as abstract
+  abstract member Pi: float
+  default this.Add x y = x + y            // Default implementation
 
-    type MyInterface =                        // Interfaces are just abstract
-      abstract member Square: float -> float  // classes without implementations
+type MyInterface =                        // Interfaces are just abstract
+  abstract member Square: float -> float  // classes without implementations
 
-    [<Struct>]                                // Memory for structs is allocated
-    type MyStruct(x: float, y: float) =       // on the stack, not the heap
-      member __.X = x                         // Instances are passed by value,
-      member __.Y = y                         // not by reference
-
+[<Struct>]                                // Memory for structs is allocated
+type MyStruct(x: float, y: float) =       // on the stack, not the heap
+  member __.X = x                         // Instances are passed by value,
+  member __.Y = y                         // not by reference
+```
 ---
 
     type DerivedClass(param1, param2) =
@@ -360,7 +361,7 @@ We can reach a similar effect in Scala marking constructor parameters as fields
     [lang=scala]
     class MyRecord(val id: Int, val qt: Double,
                    val name: String, val li: List[Int]) {}
-    
+
 
 ***
 
@@ -381,6 +382,8 @@ We can reach a similar effect in Scala marking constructor parameters as fields
     }
 
     println(formatTerm(Fun("x", Fun("y", App(Var("x"), Var("y"))))))
+
+' 30 min
 
 ---
 
@@ -450,7 +453,7 @@ println(5 match {
 ```
 let (|Even|Odd|) i =
   if i % 2 = 0 then Even else Odd
-  
+
 match 5 with Even -> "Hello" | Odd -> "Goodbye"
 |> printfn "%s"
 ```
@@ -515,9 +518,11 @@ F# generics are very similar to Scala, with a few diferences:
 
 * **Statically Resolved Type Parameters**<br />
   Type parameter replaced with actual types at compile time instead of at run time
-  
+
 * **No generics of generics**<br />
   Generics are native to .NET platform (no erasures) but on the other hand are more limited (no type classes)
+
+' 35 min
 
 ---
 
@@ -535,10 +540,10 @@ let max x y = if x > y then x else y
 // can be used with inline functions for neat tricks like duck typing
 let inline makeNoise (animal: ^a when ^a : (member MakeNoise: unit->unit)) =
   (^a: (member MakeNoise: unit->unit) animal)
-  
+
 type Dog() = member __.MakeNoise() = printfn "Guau!"
 type Cat() = member __.MakeNoise() = printfn "Miau!"
-  
+
 makeNoise(Dog())
 makeNoise(Cat())
 ```
@@ -573,6 +578,8 @@ F# built-in functions and operators and focus only on a few collection types:
 | map            | Yes         | Indexed access  | Map             |
 | set            | Yes         | Unique items    | Set             |
 
+' 40 min
+
 ---
 
 ### Fluent APIs
@@ -587,7 +594,7 @@ F# built-in functions and operators and focus only on a few collection types:
         yield Map("name" -> s"Person$i",
                   "age" -> rnd.nextInt(99))
     }
-  
+
     selectDataRows()
       .map(row => new Person(row("name").asInstanceOf[String],
                             row("age").asInstanceOf[Int]))
@@ -612,7 +619,7 @@ F# built-in functions and operators and focus only on a few collection types:
 
     // It's more idiomatic in F# to use module functions
     // and the pipe operator rather than methods
-    
+
     getDataRows()
     |> Seq.map (fun row -> { name = unbox row.["name"]
                              age = unbox row.["age"] })
@@ -620,10 +627,10 @@ F# built-in functions and operators and focus only on a few collection types:
     |> Seq.take 20
     |> Seq.sortBy (fun p -> p.age)
     |> Seq.toList
-    
+
     // List and Array modules contain the same functions as Seq
     // Of course, pipe operator is possible in SCala too
-    
+
 ---
 
 ### F# Comprehensions
@@ -633,10 +640,10 @@ F# allows comprensions similar to those in Haskell or Python
     let myList  =     [  for i in 1..100 do yield i*i ]
     let myArray =     [| for i in 1..100 -> i*i |]
     let mySeq   = seq {  for i in 1..100 -> i*i }
-    
+
     // `->` is a shortcut for `do yield`
 
-In Scala we would just use functions 
+In Scala we would just use functions
 
     [lang=scala]
     List.range(1,101).map(i => i*i)
@@ -698,6 +705,8 @@ operations in a monadic way.
       case _ => println("Purchased " + amount + " CHF")
     }
 
+' 50 min
+
 ---
 
 In F#, this can be done using **computation expressions**
@@ -710,7 +719,7 @@ In F#, this can be done using **computation expressions**
       use reader = new System.IO.StreamReader(stream)
       return reader.ReadToEnd()
     }
-        
+
     [ "http://fsharp.org/"; "http://www.scala-lang.org/" ]
     |> List.map fetchUrlAsync
     |> Async.Parallel
@@ -730,7 +739,7 @@ F# core has **Asynchronous Workflows** built-in
       if x <= 2
       then 1
       else fib(x-1) + fib(x-2)
-    
+
     let fibs =
       [ for i in 0..40 -> async { return fib(i) } ]
       |> Async.Parallel
@@ -744,23 +753,25 @@ calling *Async.Start* or *Async.RunSynchronously*
 
 ### Custom computation expressions
 
-    type MaybeBuilder() =
-      member __.Bind(x,f) = Option.bind f x
-      member __.Return v = Some v
-      member __.ReturnFrom o = o
-    let maybe = MaybeBuilder()
-        
-    let riskyOp x y =
-      if x + y < 100 then Some(x+y) else None
-    
-    let execMaybe x = maybe {
-      let! a = riskyOp x (x+1)
-      let! b = riskyOp a (a+1)
-      let! c = riskyOp b (b+1)
-      let! d = riskyOp c (c+1)
-      return d
-    }    
-    execMaybe 5
+```
+type MaybeBuilder() =
+  member __.Bind(x,f) = Option.bind f x
+  member __.Return v = Some v
+  member __.ReturnFrom o = o
+let maybe = MaybeBuilder()
+
+let riskyOp x y =
+  if x + y < 100 then Some(x+y) else None
+
+let execMaybe x = maybe {
+  let! a = riskyOp x (x+1)
+  let! b = riskyOp a (a+1)
+  let! c = riskyOp b (b+1)
+  let! d = riskyOp c (c+1)
+  return d
+}    
+execMaybe 5
+```
 
 Besides _Bind_ and _Return_, there are [other methods](http://fsharpforfunandprofit.com/posts/computation-expressions-builder-part1/)
 wich can be implemented by custom computations expressions
@@ -774,7 +785,7 @@ Query expressions provide support for LINQ in F#
 
 ```
 query {
-    for n in db.Student do 
+    for n in db.Student do
     join e in db.CourseSelection on
           (n.StudentID = e.StudentID)
     count        
@@ -785,8 +796,8 @@ query {
 They express transformations on a data source wich can
 be translated to another language, usually SQL
 
-    [lang=sql]SELECT COUNT(*) FROM 
-    Student JOIN CourseSelection 
+    [lang=sql]SELECT COUNT(*) FROM
+    Student JOIN CourseSelection
     ON Student.StudentID = CourseSelection.StudentID
 
 ***
@@ -816,6 +827,8 @@ Measure annotations disappear after compilation and thus they have no performanc
 
 (Cannot be retrieved by Reflection though)
 
+' 60 min
+
 ***
 
 ### Type Providers
@@ -844,22 +857,33 @@ Type providers can also be emulated with [Scala macros](http://docs.scala-lang.o
 
 ### Flagship Projects
 
-| Scala          |        | F#              |
-| :------------: | ------ | :-------------: |
-| Akka           |        | Akka.net        |
-| Spark          |        | Mbrace / Prajna |
-| Play           |        | ASP.NET / Suave |
+|               | Scala          | F#             |
+| :-----------: | :------------: | :------------: |
+| Web           | [Play](https://www.playframework.com/), [Lift](http://liftweb.net/) | [Suave](http://suave.io/)       |
+| Actors        | [Akka](http://akka.io/)            | [Akka.net](http://getakka.net/) |
+| Big Data      | [Spark](http://spark.apache.org/)  | [Mbrace](http://www.m-brace.net/), [Prajna](http://msrccs.github.io/Prajna/) |
+| Visualization | [Zeppelin](https://zeppelin.incubator.apache.org/) | [FsLab](http://fslab.org/) |
 
-TODO: Add FSLabs
+> More at the [F# space for incubating open community projects](http://fsprojects.github.io/)
+
+' 1 h 10 min
 
 ***
 
 ### Other platforms
 
-TODO: Add brief explanation
+#### Scala
 
-- Mobile platforms
-- JavaScript
+- [Scala.js](http://www.scala-js.org/)
+- [Android](http://macroid.github.io/ScalaOnAndroid.html)
+
+<br />
+<br />
+
+#### F#
+
+- JS/HTML5: [FunScript](http://funscript.info/) and [WebSharper](http://websharper.com/)
+- [Mobile platforms with Xamarin](http://fsharp.org/guides/apps-and-games/index.html)
 
 ***
 
@@ -867,5 +891,21 @@ TODO: Add brief explanation
 
 * [F# foundation](http://fsharp.org/)
 * [F# for Fun and Profit](http://fsharpforfunandprofit.com/)
+* [F# Weekly](https://sergeytihon.wordpress.com/category/f-weekly/)
+* [F# on Twitter](https://twitter.com/search?q=%23fsharp)
 
-TODO: Add more links? 
+> This slides were made with <a href=""> [FSReveal](http://fsprojects.github.io/FsReveal/) and no kittens were harmed in the process
+
+***
+
+### And here comes the unasked-for advice!
+
+Remember to focus away and [blink regularly](https://www.uihealthcare.org/2column.aspx?id=225650) when staring at the screen for a long time
+
+<div style="text-align: right">
+  <p>Ping me!</p>
+  <p>@alfonsogcnunez</p>
+  <p>[Github](https://github.com/alfonsogarciacaro), [SlideShare](http://www.slideshare.net/alfonsogarciacaro7)</p>
+</div>
+
+' 1 h 15 min

@@ -1,0 +1,7 @@
+strong, thead {
+  color: burlywood
+}
+
+blockquote:before {
+  content: initial
+}
