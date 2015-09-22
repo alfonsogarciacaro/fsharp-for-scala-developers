@@ -20,7 +20,7 @@ Walking into the dark side
 
 ***
 
-### How much do Scala and F# look like?
+### How much do Scala and F# look alike?
 
 - Bring (non-strict) **Functional Programming** to Java and .NET
 - Full **compatibility** with their host platforms
