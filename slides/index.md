@@ -272,6 +272,9 @@ type MyInterface =                        // Interfaces are just abstract
 type MyStruct(x: float, y: float) =       // on the stack, not the heap
   member __.X = x                         // Instances are passed by value,
   member __.Y = y                         // not by reference
+
+type System.Double with                   // Type extension
+  member x.Square = System.Math.Sqrt(x)
 ```
 ---
 
@@ -370,7 +373,7 @@ We can reach a similar effect in Scala marking constructor parameters as fields
 #### Scala
 
     [lang=scala]
-    abstract class Term
+    sealed abstract class Term
     case class Var(name: String) extends Term
     case class Fun(arg: String, body: Term) extends Term
     case class App(f: Term, v: Term) extends Term
@@ -488,7 +491,8 @@ let (|ParseRegex|_|) regex str =
    | m when not m.Success -> None
    | m -> [for x in m.Groups -> x.Value] |> List.tail |> Some
 
-let parseDate = function
+let parseDate str =
+  match str with
   | ParseRegex @"^(\d{1,2})/(\d{1,2})/(\d{1,2})$"
               [Integer m; Integer d; Integer y]
     -> System.DateTime(y + 2000, m, d)
@@ -556,7 +560,7 @@ Type classes like Functor are not allowed
 Functor.map : ('a->'b) -> 'T<'a> -> 'T<'b>
 ```
 <br />
-Instead, `map` must be implemented for each type (or interface)
+Instead, _map_ must be implemented for each type (or interface)
 
 ```
 List.map  : ('a->'b) -> list<'a> -> list<'b>
@@ -892,7 +896,7 @@ Type providers can also be emulated with [Scala macros](http://docs.scala-lang.o
 * [F# foundation](http://fsharp.org/)
 * [F# for Fun and Profit](http://fsharpforfunandprofit.com/)
 * [F# Weekly](https://sergeytihon.wordpress.com/category/f-weekly/)
-* [F# on Twitter](https://twitter.com/search?q=%23fsharp)
+* Get started with [Ionide](http://ionide.io/)
 
 > These slides were made with <a href=""> [FSReveal](http://fsprojects.github.io/FsReveal/) and no kittens were harmed in the process
 
